@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Skill Sense AI"
+description = "An AI-powered career development platform for students, job seekers, and professionals to assess skills, close gaps, and build a clear path toward their next opportunity."
+version = "1.0.0"
+id = "artifacts/skill-sense-ai"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22304
+
+[services.development]
+run = "pnpm --filter @workspace/skill-sense-ai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/skill-sense-ai", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/skill-sense-ai/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22304"
+BASE_PATH = "/"
