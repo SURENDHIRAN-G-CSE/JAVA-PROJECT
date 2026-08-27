@@ -1,11 +1,14 @@
 import { useEffect, useState, type ButtonHTMLAttributes, type FormEvent, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import AuthScreen from '@/components/auth-screen';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
-import { Activity, ArrowRight, Award, BarChart3, Bell, BookOpen, Bookmark, BrainCircuit, Check, CheckCircle2, ChevronRight, CircleHelp, ClipboardCheck, Clock3, Code2, Compass, FileSearch, FileText, Flame, GitBranch, Globe2, GraduationCap, Laptop2, Layers3, LayoutDashboard, Lightbulb, LockKeyhole, Menu, MessageSquareText, Moon, Pencil, Play, Radar, RotateCcw, Search, Settings2, ShieldCheck, SlidersHorizontal, Sparkles, Sun, Target, TrendingUp, Upload, X, Zap } from 'lucide-react';
+import { Activity, ArrowRight, Award, BarChart3, Bell, BookOpen, Bookmark, BrainCircuit, Check, CheckCircle2, ChevronRight, CircleHelp, ClipboardCheck, Clock3, Code2, Compass, FileSearch, FileText, Flame, GitBranch, Globe2, GraduationCap, Laptop2, Layers3, LayoutDashboard, Lightbulb, LockKeyhole, LogOut, Menu, MessageSquareText, Moon, Pencil, Play, Radar, RotateCcw, Search, Settings2, ShieldCheck, SlidersHorizontal, Sparkles, Sun, Target, TrendingUp, Upload, X, Zap } from 'lucide-react';
 import { Link, Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
+import { logOut, observeAuth } from '@/lib/firebase';
+import type { User } from 'firebase/auth';
 
 const queryClient = new QueryClient();
 type Icon = typeof LayoutDashboard;
@@ -29,11 +32,13 @@ function LogoMark() {
   return <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-foreground" data-testid="logo-mark"><Radar size={19} strokeWidth={2.5} /><span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-primary" /></div>;
 }
 
-function Shell({ children }: { children: ReactNode }) {
+function Shell({ children, user, onSignOut }: { children: ReactNode; user: User | null; onSignOut: () => void }) {
   const [location, setLocation] = useLocation();
   const [dark, setDark] = useState(() => localStorage.getItem('skill-sense-theme') === 'dark');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const displayName = user?.displayName || 'Ananya Sharma';
+  const initials = displayName.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase();
   useEffect(() => { document.documentElement.classList.toggle('dark', dark); localStorage.setItem('skill-sense-theme', dark ? 'dark' : 'light'); }, [dark]);
   const goSearch = (event: FormEvent) => { event.preventDefault(); if (search.trim()) setLocation(`/explore?search=${encodeURIComponent(search.trim())}`); };
   return <div className="noise flex min-h-[100dvh] bg-background">
@@ -42,7 +47,7 @@ function Shell({ children }: { children: ReactNode }) {
       <div className="mt-11 px-2 font-mono-ui text-[9px] uppercase tracking-[.22em] text-sidebar-foreground/40">Your workspace</div>
       <nav className="mt-3 space-y-1" aria-label="Main navigation">{navItems.map(({ href, label, icon: NavIcon }) => <Link key={href} href={href} onClick={() => setMobileOpen(false)} data-testid={`link-nav-${label.toLowerCase().replaceAll(' ', '-')}`} className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-semibold transition-colors ${location === href ? 'bg-sidebar-accent text-sidebar-primary' : 'text-sidebar-foreground/65 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground'}`}><NavIcon size={17} /><span>{label}</span>{location === href && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-primary" />}</Link>)}</nav>
       <div className="mt-auto"><div className="mb-3 rounded-xl border border-sidebar-border bg-sidebar-accent/60 p-3.5"><div className="flex items-center gap-2 text-sidebar-primary"><Zap size={15} /><span className="font-mono-ui text-[10px] uppercase tracking-wider">Weekly pulse</span></div><p className="mt-2 text-xs leading-relaxed text-sidebar-foreground/60">You’re 2 actions away from your weekly goal.</p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-sidebar/70"><div className="h-full w-[68%] rounded-full bg-sidebar-primary" /></div><div className="mt-2 flex justify-between font-mono-ui text-[9px] text-sidebar-foreground/40"><span>4 / 6 actions</span><span>68%</span></div></div>
-        <Link href="/profile" data-testid="link-profile-sidebar" className="flex items-center gap-3 rounded-lg border border-sidebar-border px-3 py-3 transition-colors hover:bg-sidebar-accent"><div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-primary font-mono-ui text-[11px] font-bold text-sidebar-primary-foreground">AS</div><div className="min-w-0"><div className="truncate text-xs font-semibold">Ananya Sharma</div><div className="truncate text-[10px] text-sidebar-foreground/45">Full Stack track</div></div><Settings2 size={15} className="ml-auto text-sidebar-foreground/40" /></Link></div>
+        <div className="flex items-center gap-2"><Link href="/profile" data-testid="link-profile-sidebar" className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border border-sidebar-border px-3 py-3 transition-colors hover:bg-sidebar-accent"><div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-primary font-mono-ui text-[11px] font-bold text-sidebar-primary-foreground">{initials}</div><div className="min-w-0"><div className="truncate text-xs font-semibold">{displayName}</div><div className="truncate text-[10px] text-sidebar-foreground/45">Full Stack track</div></div><Settings2 size={15} className="ml-auto text-sidebar-foreground/40" /></Link><button onClick={onSignOut} className="rounded-lg border border-sidebar-border p-3 text-sidebar-foreground/50 transition hover:bg-sidebar-accent hover:text-sidebar-primary" data-testid="button-sign-out" aria-label="Sign out"><LogOut size={15} /></button></div></div>
     </aside>
     {mobileOpen && <button aria-label="Close navigation" className="fixed inset-0 z-30 bg-foreground/30 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)} data-testid="button-mobile-backdrop" />}
     <div className="min-w-0 flex-1 lg:ml-[252px]"><header className="sticky top-0 z-20 flex h-[72px] items-center gap-4 border-b border-border/70 bg-background/90 px-5 backdrop-blur-xl md:px-8" data-testid="top-header"><button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 hover:bg-muted lg:hidden" data-testid="button-open-mobile-nav"><Menu size={21} /></button><form onSubmit={goSearch} className="relative hidden max-w-[360px] flex-1 md:block"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search your career space" className="h-10 w-full rounded-lg border border-border/80 bg-card/70 pl-9 pr-4 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" data-testid="input-global-search" /><span className="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-border px-1.5 py-0.5 font-mono-ui text-[9px] text-muted-foreground lg:block">⌘ K</span></form><div className="ml-auto flex items-center gap-2"><div className="hidden items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold text-secondary-foreground sm:flex" data-testid="status-profile-complete"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> Profile 82% complete</div><button onClick={() => setDark(v => !v)} className="rounded-lg p-2.5 text-muted-foreground hover:bg-muted hover:text-foreground" data-testid="button-toggle-theme" aria-label="Toggle theme">{dark ? <Sun size={18} /> : <Moon size={18} />}</button><button onClick={() => setMobileOpen(false)} className="relative rounded-lg p-2.5 text-muted-foreground hover:bg-muted hover:text-foreground" data-testid="button-notifications" aria-label="Notifications"><Bell size={18} /><span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-accent" /></button></div></header><main className="mx-auto max-w-[1450px] px-5 py-8 md:px-8 lg:px-10">{children}</main></div>
@@ -123,6 +128,12 @@ function Router() {
   return <ErrorBoundary resetKey={useLocation()[0]}><Switch><Route path="/" component={Overview} /><Route path="/assessments" component={Assessments} /><Route path="/roadmap" component={Roadmap} /><Route path="/resume" component={Resume} /><Route path="/interviews" component={Interviews} /><Route path="/explore" component={Explore} /><Route path="/profile" component={Profile} /><Route component={NotFound} /></Switch></ErrorBoundary>;
 }
 function App() {
-  return <QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><Shell><Router /></Shell></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>;
+  const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [preview, setPreview] = useState(false);
+  useEffect(() => observeAuth(nextUser => { setUser(nextUser); setAuthReady(true); }), []);
+  if (!authReady) return <div className="flex min-h-[100dvh] items-center justify-center bg-background text-sm text-muted-foreground">Preparing your workspace…</div>;
+  if (!user && !preview) return <AuthScreen onPreview={() => setPreview(true)} />;
+  return <QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><Shell user={user} onSignOut={() => { void logOut(); setPreview(false); }}><Router /></Shell></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>;
 }
 export default App;

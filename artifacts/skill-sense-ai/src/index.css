@@ -146,6 +146,8 @@
   .animate-rise-delay-2 { animation-delay: .16s; }
   .animate-rise-delay-3 { animation-delay: .24s; }
   .animate-pulse-soft { animation: pulse-soft 2.8s ease-in-out infinite; }
+  .auth-page { position: relative; overflow: hidden; }
+  .auth-glow { background: radial-gradient(circle at 74% 22%, hsl(var(--primary) / .1), transparent 28%), radial-gradient(circle at 16% 82%, hsl(var(--accent) / .08), transparent 25%); }
   @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes pulse-soft { 0%, 100% { opacity: .65; } 50% { opacity: 1; } }
 }
